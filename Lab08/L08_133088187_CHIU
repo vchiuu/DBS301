@@ -1,0 +1,142 @@
+-- ***********************************************************************
+-- Name: VIVIAN CHIU
+-- ID: 133088187
+-- Date: Wednesday, July 17th 2019
+-- Purpose: Lab 8 DBS301 (Views and Permissions)
+-- ***********************************************************************
+
+-- Question 1 - Display the names of the employees whose salary is the same
+-- as the lowest salaried employee in any department
+SELECT FIRST_NAME, LAST_NAME
+FROM EMPLOYEES E JOIN (SELECT MIN(SALARY) AS SALARY
+                        FROM EMPLOYEES) S
+    ON (E.SALARY = S.SALARY);
+                    
+-- Question 2 - Display the names of the employee(s) whose salary is the 
+-- lowest in each department.
+SELECT FIRST_NAME, LAST_NAME
+FROM EMPLOYEES E JOIN (SELECT MIN(SALARY) AS SALARY, DEPARTMENT_ID
+                        FROM EMPLOYEES
+                        GROUP BY DEPARTMENT_ID) S
+    ON (E.SALARY = S.SALARY) AND (E.DEPARTMENT_ID = S.DEPARTMENT_ID);
+
+-- Question 3 - Give each of the employees in question 2 a $120 bonus.
+SELECT FIRST_NAME, LAST_NAME, E.SALARY + 120 AS SALARY
+FROM EMPLOYEES E JOIN (SELECT MIN(SALARY) AS SALARY, DEPARTMENT_ID
+                        FROM EMPLOYEES
+                        GROUP BY DEPARTMENT_ID) S
+    ON (E.SALARY = S.SALARY) AND (E.DEPARTMENT_ID = S.DEPARTMENT_ID);
+
+-- Question 4 - Create a view named vwAllEmps that consists of all 
+-- employees includes employee_id, last_name, salary, department_id, 
+-- department_name, city and country (if applicable)
+CREATE OR REPLACE VIEW vwAllEmps AS
+    SELECT E.EMPLOYEE_ID, E.LAST_NAME, E.SALARY, D.DEPARTMENT_ID, D.DEPARTMENT_NAME, 
+        L.CITY, C.COUNTRY_NAME
+    FROM EMPLOYEES E JOIN DEPARTMENTS D ON (E.DEPARTMENT_ID = D.DEPARTMENT_ID)
+        JOIN LOCATIONS L ON (D.LOCATION_ID = L.LOCATION_ID)
+        JOIN COUNTRIES C ON (L.COUNTRY_ID = C.COUNTRY_ID);
+
+-- Question 5 - Use the vwAllEmps view to:
+-- Part A) Display the employee_id, last_name, salary and city for all employees
+SELECT EMPLOYEE_ID "Emp ID", LAST_NAME "Last Name", SALARY "Salary", CITY "City"
+FROM vwAllEmps;
+
+-- Part B) Display the total salary of all employees by city
+SELECT CITY "City", TO_CHAR(SUM(SALARY), '$999,999.00')"Total Salary"
+FROM vwAllEmps
+GROUP BY CITY;
+
+-- Part C) Increase the salary of the lowest paid employee(s) in each department
+-- by 120 
+UPDATE vwAllEmps
+    SET SALARY = SALARY + 120
+    WHERE SALARY IN (SELECT SALARY 
+                        FROM (SELECT MIN(SALARY) AS SALARY, DEPARTMENT_ID
+                                FROM vwAllEmps
+                                GROUP BY DEPARTMENT_ID))
+        AND DEPARTMENT_ID IN (SELECT DEPARTMENT_ID
+                                FROM (SELECT MIN(SALARY) AS SALARY, DEPARTMENT_ID
+                                        FROM vwAllEmps 
+                                        GROUP BY DEPARTMENT_ID));
+                                
+-- Part D)What happens if you try to insert an employee by providing values for 
+-- all columns in this view?
+INSERT INTO vwAllEmps VALUES (999, 'Chiu', 10000, 60, 'IT', 'Toronto', 'Canada'); 
+-- You cannot insert an employee by providing values to the view because you 
+-- cannot modify more than one base table through a join view.
+
+-- Part E) Delete the employee named Vargas. Did it work? Show proof.
+DELETE FROM vwAllEmps
+    WHERE UPPER(LAST_NAME) = 'VARGAS';
+
+-- 1 row deleted.
+
+SELECT *
+    FROM vwALLEmps
+    WHERE UPPER(LAST_NAME) = 'VARGAS'; 
+    
+-- 0 rows were fetched
+    
+-- Question 6 - Create a view named vwAllDepts that consists of all 
+-- departments and includes department_id, department_name, city and country
+-- (if applicable)
+CREATE OR REPLACE VIEW vwAllDepts AS 
+    SELECT D.DEPARTMENT_ID, D.DEPARTMENT_NAME, L.CITY, C.COUNTRY_NAME
+    FROM DEPARTMENTS D JOIN LOCATIONS L ON (D.LOCATION_ID = L.LOCATION_ID)
+    JOIN COUNTRIES C ON (L.COUNTRY_ID = C.COUNTRY_ID);
+    
+-- Question 7 - Use the vwAllDepts view to:
+-- Part A) For all departments display the department_id, name and city
+SELECT DEPARTMENT_ID, DEPARTMENT_NAME, CITY
+FROM vwAllDepts;
+-- Part B) For each city that has departments located in it display the number
+-- of departments by city
+SELECT CITY, COUNT(DEPARTMENT_ID)
+FROM vwAllDepts
+GROUP BY CITY
+ORDER BY COUNT(DEPARTMENT_ID) DESC;
+
+-- Question 8 - Create a view called vwAllDeptSumm that consists of all 
+-- departments and includes for each department: department_id, department_name,
+-- number of employees, number of salaried employees, total salary of all 
+-- employees. Number of Salaried must be different from number of employees. 
+-- The difference is some get commission.
+CREATE OR REPLACE VIEW vwAllDeptSumm AS
+    SELECT DEPARTMENT_ID, DEPARTMENT_NAME, EMPLOYEE_COUNT, SALARIED_EMPLOYEES, TOTAL_SALARY
+    FROM DEPARTMENTS JOIN (SELECT COUNT(EMPLOYEE_ID) AS EMPLOYEE_COUNT, 
+                                COUNT(COMMISSION_PCT) AS SALARIED_EMPLOYEES,
+                                SUM(SALARY) AS TOTAL_SALARY, DEPARTMENT_ID
+                            FROM EMPLOYEES
+                            GROUP BY DEPARTMENT_ID)
+        USING (DEPARTMENT_ID);
+                                
+-- Question 9 - Use the vwAllDeptSumm view to display department name and 
+-- number of employees for departments that have more than the average number
+-- of employees 
+SELECT DEPARTMENT_NAME, EMPLOYEE_COUNT
+FROM vwAllDeptSumm
+WHERE EMPLOYEE_COUNT > (SELECT AVG(EMPLOYEE_COUNT)
+                        FROM vwAllDeptSumm);
+
+-- Question 10 - A) Use the GRANT statement to allow another student (Neptune
+-- account) to retrieve data for your employees table and to allow them to 
+-- retrieve, insert and update data in your departments table. Show proof
+GRANT SELECT ON EMPLOYEES TO dbs301_192d03;
+GRANT SELECT, INSERT, UPDATE ON DEPARTMENTS TO dbs301_192d03;
+
+SELECT * FROM USER_TAB_PRIVS;
+
+-- B) Use the REVOKE statement to remove permission for that student to 
+-- insert and update data in your departments table
+REVOKE SELECT, INSERT, UPDATE ON DEPARTMENTS TO dbs301_192d03;
+
+SELECT * FROM USER_TAB_PRIVS;
+
+-- Note: When you create a view, saving a text file with the select statement
+--(no more, no less). You are not saving the result! A view may not contain 
+-- an ORDER BY statement. Reusability is the major advantage of using a view, 
+-- as a final result and within other queries. 
+
+-- Note: Permissions for each type of database tool will be slightly different.
+-- The rules will be the same, except the syntax will be different.
