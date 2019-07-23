@@ -6,4 +6,6 @@ This repository contains labs and assignments using Oracle SQL
 * Lab 3 - Single Line Functions
 * Lab 4 - Multi-Line Functions
 * Lab 5 - Joins
-* Lab 6 - Set Operators
+* Lab 6 - Sub-Select
+* Lab 7 - Set Operators
+* Lab 8 - Views & Permissions
