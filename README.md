@@ -9,3 +9,5 @@ This repository contains labs and assignments using Oracle SQL
 * Lab 6 - Sub-Select
 * Lab 7 - Set Operators
 * Lab 8 - Views & Permissions
+* Lab 9 - Data Definition Language (DDL) & Data Manipulation Language (DML)
+* Lab 10 - Transactions & Miscellaneous
