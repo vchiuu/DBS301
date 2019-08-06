@@ -30,41 +30,17 @@ FROM (SELECT COUNTRY_ID
 -- Question 3 - The Vice President needs very quickly a list of 
 -- departments 10, 50, 20 in that order. Job id and department id
 -- are to be displayed
-SELECT DISTINCT(JOB_ID), DEPARTMENT_ID
-FROM (SELECT DEPARTMENT_ID
-        FROM DEPARTMENTS
-        WHERE DEPARTMENT_ID IN (10,50,20)
-            INTERSECT
-      SELECT DEPARTMENT_ID
-        FROM EMPLOYEES)
-   JOIN EMPLOYEES
-   USING(DEPARTMENT_ID)
-ORDER BY 
-    CASE DEPARTMENT_ID
-        WHEN 10 THEN 1
-        WHEN 50 THEN 2
-        WHEN 20 THEN 3
-    END;
--- VERSION 2 (if using distinct is cheating)
-SELECT JOB_ID, DEPARTMENT_ID
-FROM (SELECT DEPARTMENT_ID
-        FROM DEPARTMENTS
-        WHERE DEPARTMENT_ID IN (10,50,20)
-            INTERSECT
-      SELECT DEPARTMENT_ID
-        FROM EMPLOYEES)
-   JOIN (SELECT JOB_ID, DEPARTMENT_ID
-            FROM EMPLOYEES
-                UNION
-         SELECT JOB_ID, DEPARTMENT_ID
-            FROM EMPLOYEES)
-   USING(DEPARTMENT_ID)
-ORDER BY 
-    CASE DEPARTMENT_ID
-        WHEN 10 THEN 1
-        WHEN 50 THEN 2
-        WHEN 20 THEN 3
-    END;
+SELECT DISTINCT job_id, department_id
+    FROM employees
+    WHERE department_id = 10
+UNION ALL
+SELECT DISTINCT job_id, department_id
+    FROM employees
+    WHERE department_id = 50
+UNION ALL
+SELECT DISTINCT job_id, department_id
+    FROM employee	s
+    WHERE department_id = 20;
     
 -- Question 4 - Create a statement that lists the employeeIDs and
 -- JobIDs of those employees who currently have a job title that 
